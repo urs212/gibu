@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>후원 랭킹</title>
+<style>
+  :root{
+    --bg:#0f0f0f; --card:#1a1a1a; --accent1:#8e2de2; --accent2:#4a00e0;
+    --muted:rgba(255,255,255,0.8);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:'Noto Sans KR',sans-serif;
+    background:linear-gradient(135deg,var(--accent1),var(--accent2));
+    color:white; min-height:100vh; padding:28px;
+  }
+  .wrap{max-width:1000px;margin:0 auto;}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+  h1{margin:0;font-size:28px}
+  .btn{
+    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.08);
+    color:white;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer;text-decoration:none;
+  }
+  .list{margin-top:18px;display:flex;flex-direction:column;gap:14px}
+  .card{
+    display:flex;align-items:center;justify-content:space-between;
+    background:var(--card);padding:16px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.45);
+    transition:transform .2s; overflow:hidden;
+  }
+  .card:hover{transform:translateY(-4px)}
+  .left{display:flex;align-items:center;gap:14px}
+  .ranknum{font-size:20px;font-weight:800;color:var(--muted);width:60px;text-align:center}
+  .info{display:flex;flex-direction:column}
+  .name{font-size:20px;font-weight:800}
+  .amount{font-size:14px;opacity:0.85;margin-top:6px}
+  .badge{display:flex;flex-direction:column;align-items:center;gap:6px}
+  .badge img{width:84px;height:84px;object-fit:contain;border-radius:10px;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.6))}
+  .badgetext{font-weight:800;opacity:0.95}
+  @media(max-width:720px){
+    .card{flex-direction:row;gap:8px}
+    .left{gap:10px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>후원 랭킹</h1>
+    <div>
+      <a class="btn" href="review.html">후기 보기</a>
+      <a class="btn" id="refreshBtn" style="margin-left:8px;cursor:pointer">새로고침</a>
+    </div>
+  </header>
+
+  <div id="list" class="list"></div>
+</div>
+
+<script>
+// 등급 이미지 (사용자 제공 링크 그대로)
+const rankImages = {
+  "아이언": "https://i.namu.wiki/i/fFHUtq2EsgP6ZDGgUv2e8VpJhIFbWUj9fNAr0JYacJQj4Lyu09A1YKRvIyVdbzwAFI0_b2OpPTSNuLfONx_jtEUy0LhBwdpyLACyO-ZeUycrTFnoHh0Cg-Dh07DIXzPjF3h61ErdQ80tihG54QFKkQ.webp",
+  "브론즈":"https://i.namu.wiki/i/3VoaV4uFwo30KZwBBA0eLoodJMN9oQ7bGE9bWWtsLnrPhbdI1ct08D_NctwDN0kr9tiNMNGLpwHCnbaZ6YIfWGH35voinzDWMqHuwh8kVLxTJRK3Nd6Uy7V0ty5F_r9VKy6smQhoo9wGd-imLoKgRw.webp",
+  "실버":"https://i.namu.wiki/i/kOcp4UWL2gWjJxbJ4Muw0lBYmpTUIQWEIZhlSebqc14WVtezg8RCTFlhn26zyDOBD5KfWL0iSe8tIVwyGA86yeslWm-NySj5rvogHOjtwmf7ILLfH9P8c6L-Wt1oa9ic-umga-stX_mV-7x1fpHMdg.webp",
+  "플래티넘":"https://i.namu.wiki/i/9G2gE4WCSCfcVE5t2YJrGMXrH66Zh6PKYpbymqS0RIz7wHjD6P868VPgReqcfMmj64-eppeSL6EcJTXcE5BVVirJU0k4FcT_H9ywJ1JIhgOdZ4AkKRITb1-KNeNQ7Mp0vFsy2bXC0kJXqT9mgD5now.webp",
+  "골드":"https://i.namu.wiki/i/oeeWENmQ1_BX1UqWYLjY_xYaVAAz-dtAR4r2HutjEMNLU1ExW106eoTEM56ESmE6cBAL6ZOliG0JDS3p8HYshJnXizVIVYjv9LnM5cnDklwNlkwiskquYZKvSvT0E4OQFC9PpUtdu6vC20yfBLQrMg.webp",
+  "다이아":"https://i.namu.wiki/i/Tz5CkDb4SKoZWW6gBpzyiHM7C35_rBomuQrbmApWeDGgYPK-NNt9vjzT5dtMV5lRNxQMuyLRUsVfvXqzt57Py4xk372fdjp6VxSMwmUyZpHy4-TdHJIYBr_kBfk-t2VWs1hTXrCS7_4efMH8VSRtyA.webp",
+  "불멸":"https://i.namu.wiki/i/1_cnpTYsY5yLZVbSqP2U4iZcOzCU2BMiY28pJQyHP229ImsQsiHVLzaTVzEhxJP6OoK5pAp3GIKekrAs88sF_9aTMPU8AceIpuek9XZb8XbK4Xhfjao1EHq412rbp2LQLxPcjg0iK4Lxn8ABzmDjpA.webp",
+  "레디언트":"https://i.namu.wiki/i/f-HVmJ79Za1GYbSYvTQXU9vfWsCM-8P5wXURP4ev_qTHkhmlv4PoSHXmZ7vtt4UZ7wDFV84i1tmYffiWdHdBhpad6HQWP0jfzBgfsdavMkP9tmkwksQIR-NKsELfQ4Ksr5RPNA_XM9myWX43jtBTKA.webp"
+};
+
+// 등급 결정
+function getRank(amount){
+  if(amount>=25000) return "레디언트";
+  if(amount>=15000) return "불멸";
+  if(amount>=10000) return "다이아";
+  if(amount>=6000) return "골드";
+  if(amount>=4000) return "플래티넘";
+  if(amount>=2500) return "실버";
+  if(amount>=1000) return "브론즈";
+  return "아이언";
+}
+
+// donations.json 불러와 렌더
+function render(){
+  fetch("donations.json")
+    .then(r=>r.json())
+    .then(arr=>{
+      arr.sort((a,b)=>b.amount-a.amount);
+      const list = document.getElementById("list");
+      list.innerHTML = "";
+      arr.forEach((d,i)=>{
+        const rank = getRank(d.amount);
+        const img = rankImages[rank] || rankImages["일반"];
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div class="left">
+            <div class="ranknum">${i+1}위</div>
+            <div class="info">
+              <div class="name">${escapeHtml(d.name)}</div>
+              <div class="amount">${d.amount.toLocaleString()}원</div>
+            </div>
+          </div>
+          <div class="badge">
+            <img src="${img}" alt="${rank}">
+            <div class="badgetext">${rank}</div>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    })
+    .catch(e=>{
+      document.getElementById("list").innerText = "donations.json 로드 오류";
+      console.error(e);
+    });
+}
+function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+document.getElementById("refreshBtn").addEventListener("click",render);
+render();
+</script>
+</body>
+</html>
