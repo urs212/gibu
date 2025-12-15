@@ -1,6 +1,6 @@
 [
   { "name": "윤하진", "amount": 30000 },
-  { "name": "김시우", "amount": 9000 },
+  { "name": "김시우", "amount": 19000 },
   { "name": "심주은", "amount": 1000 },
   { "name": "전서율", "amount": 2000 },
   { "name": "신재호", "amount": 6000 },
@@ -10,6 +10,8 @@
   { "name": "정해울", "amount": 3500 },
   { "name": "김지훈", "amount": 2400 },
   { "name": "이예준", "amount": 5000 },
-  { "name": "선윤수", "amount": 10000 }
+  { "name": "선윤수", "amount": 10000 },
+  { "name": "?", "amount": 0000 },
 ]
+
 
